@@ -3,6 +3,24 @@
 The training plane runs on **free-tier GPU** (Colab/Kaggle). These notebooks are *thin* —
 they install the package and call `emotionsense.*`, so logic never forks from `src/`.
 
+## RC1 experimental validation (current milestone)
+
+Ready-to-run notebooks that validate the **frozen RC1** (`v1.0.0-rc1`) on real corpora
+without any source changes — they install the tagged release and run the prepared
+`configs/experiments/rc1_*.yaml`:
+
+| Notebook | Platform | Datasets via |
+|----------|----------|--------------|
+| `kaggle_rc1_validation.ipynb` | Kaggle | attach Kaggle datasets, symlink into `data/raw/` |
+| `colab_rc1_validation.ipynb`  | Colab  | `scripts/fetch_datasets.py` (RAVDESS direct + TESS/CREMA-D via Kaggle API) |
+
+Experiments run: `rc1_validation` (RAVDESS 5-fold + cross-corpus CREMA-D), `rc1_cremad`
+(CREMA-D in-corpus CV), `rc1_transformer` (Distil-HuBERT — SSL extraction is CPU-bound in
+RC1). **Wait for these results before proposing any architectural change.**
+
+---
+
+
 | Notebook | Purpose |
 |----------|---------|
 | `01_download_data.ipynb` | Fetch + extract corpora into `data/raw/` |

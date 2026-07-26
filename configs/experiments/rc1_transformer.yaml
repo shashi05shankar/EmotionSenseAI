@@ -1,0 +1,23 @@
+name: rc1-transformer
+description: >
+  RC1 transformer validation (GPU notebook). Frozen Distil-HuBERT embeddings + SVM head vs a
+  classical SVM and the majority baseline, speaker-independent 5-fold CV on RAVDESS + the
+  cross-corpus RAVDESS->CREMA-D test. Requires the 'transformer' extra.
+
+  NOTE (frozen RC1 behaviour): SSL feature extraction in RC1 runs on CPU (the extractor does
+  not place the model on CUDA), so a GPU instance will not accelerate it. Embeddings are
+  cached per clip and reused across folds, so cost is ~one forward pass per unique clip.
+  Expect the CREMA-D cross-corpus pass (~7.4k clips) to dominate runtime. This CPU-only SSL
+  path is a candidate improvement to evaluate AFTER validation results are in.
+datasets:
+  - ravdess
+models:
+  - baseline_majority
+  - svm
+  - distilhubert
+cross_corpus:
+  train: ravdess
+  test: crema_d
+eval:
+  n_folds: 5
+  seed: 42

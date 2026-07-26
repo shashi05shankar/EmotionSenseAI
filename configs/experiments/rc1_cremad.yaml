@@ -1,0 +1,17 @@
+name: rc1-cremad
+description: >
+  RC1 validation on CREMA-D in-corpus (91 speakers -> a strong speaker-independent CV).
+  6-class corpus (no surprise/calm). Baselines + classical, 5-fold. No cross-corpus block
+  here; CREMA-D is the diverse corpus we normally hold out, used here only to sanity-check
+  in-corpus behaviour on a speaker-rich dataset.
+datasets:
+  - crema_d
+models:
+  - baseline_majority
+  - baseline_random
+  - logreg
+  - svm
+  - random_forest
+eval:
+  n_folds: 5
+  seed: 42

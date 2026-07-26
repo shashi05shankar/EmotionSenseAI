@@ -1,0 +1,19 @@
+name: rc1-validation
+description: >
+  RC1 real-data validation (CPU). Baselines + classical models under speaker-independent
+  5-fold CV on RAVDESS, plus the headline cross-corpus RAVDESS->CREMA-D generalization test
+  (projected to the shared 6-class intersection). This is the primary acceptance run.
+datasets:
+  - ravdess
+models:
+  - baseline_majority
+  - baseline_random
+  - logreg
+  - svm
+  - random_forest
+cross_corpus:
+  train: ravdess
+  test: crema_d
+eval:
+  n_folds: 5
+  seed: 42
