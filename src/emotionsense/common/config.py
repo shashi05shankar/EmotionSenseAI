@@ -40,6 +40,11 @@ class Settings(BaseSettings):
     jwt_secret: str = "change-me-in-prod"
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 60
+    # Admin account is provisioned from the environment only — no credentials are baked
+    # into the code. Store a bcrypt hash (generate with emotionsense.backend.security.
+    # hash_password); if unset, no user can authenticate (secure by default).
+    admin_email: str = "admin@emotionsense.ai"
+    admin_password_hash: str | None = None
 
     # Serving
     default_model: str = "svm-ravdess:v1"

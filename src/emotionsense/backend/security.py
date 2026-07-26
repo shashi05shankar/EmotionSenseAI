@@ -9,21 +9,29 @@ from __future__ import annotations
 import time
 from typing import Any
 
+import bcrypt
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 
 from emotionsense.common.config import get_settings
 from emotionsense.common.errors import UnauthenticatedError
 
-_pwd = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# bcrypt operates on the first 72 bytes of the password (algorithm limit); we truncate
+# explicitly so long inputs hash deterministically instead of raising.
+_BCRYPT_MAX_BYTES = 72
 
 
 def hash_password(password: str) -> str:
-    return _pwd.hash(password)
+    """Return a bcrypt hash for ``password``."""
+    digest = bcrypt.hashpw(password.encode("utf-8")[:_BCRYPT_MAX_BYTES], bcrypt.gensalt())
+    return digest.decode("utf-8")
 
 
 def verify_password(password: str, hashed: str) -> bool:
-    return _pwd.verify(password, hashed)
+    """Constant-time verify of ``password`` against a stored bcrypt ``hashed``."""
+    try:
+        return bcrypt.checkpw(password.encode("utf-8")[:_BCRYPT_MAX_BYTES], hashed.encode("utf-8"))
+    except (ValueError, TypeError):
+        return False
 
 
 def create_access_token(subject: str, role: str) -> str:

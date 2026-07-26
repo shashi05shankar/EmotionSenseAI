@@ -25,6 +25,6 @@ jobs:
       - name: Type check (mypy)
         run: mypy src || true   # non-blocking until strict-clean; tighten post-P11
       - name: Unit + integration tests
-        run: pytest -m "unit or integration" --cov --cov-report=term-missing
+        run: pytest -m "unit or integration" --cov=emotionsense --cov-report=term-missing --cov-fail-under=70
       - name: Smoke benchmark (synthetic, no downloads)
         run: python scripts/run_benchmark.py --experiment configs/experiments/smoke_synthetic.yaml

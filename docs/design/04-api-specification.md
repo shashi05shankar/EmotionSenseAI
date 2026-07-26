@@ -51,21 +51,30 @@
 
 ## 2. Authentication Endpoints
 
-### `POST /auth/register`
+> **Implementation status (Lean Core / RC1).** Only **`POST /auth/login`** is implemented.
+> It verifies the password against a **bcrypt hash** and returns a signed JWT. The single
+> admin account is provisioned from the environment (`ESA_ADMIN_EMAIL` +
+> `ESA_ADMIN_PASSWORD_HASH`) — **no credentials exist in the source**, and if no hash is
+> configured, no account can authenticate (secure by default). The `/auth/register`,
+> `/auth/refresh`, `/auth/me`, and `/auth/api-keys` endpoints below are **designed but not
+> yet implemented**; they arrive with the DB-backed `users` table. The current login
+> response does **not** include a refresh token (refresh is deferred per the design review).
+
+### `POST /auth/register`  *(designed, not implemented)*
 Create a user account.
 - **Auth:** none
 - **Request:** `{ "email": "a@b.com", "password": "…", "full_name": "Aisha" }`
 - **Response 201:** `{ "id": "uuid", "email": "a@b.com", "role": "user", "created_at": "…" }`
 - **Errors:** 400, 409 (email exists)
 
-### `POST /auth/login`
-Exchange credentials for tokens.
+### `POST /auth/login`  *(implemented)*
+Exchange credentials for a JWT access token (bcrypt-verified).
 - **Auth:** none
 - **Request:** `{ "email": "a@b.com", "password": "…" }`
-- **Response 200:** `{ "access_token": "jwt", "refresh_token": "jwt", "token_type": "bearer", "expires_in": 3600 }`
-- **Errors:** 400, 401
+- **Response 200:** `{ "access_token": "jwt", "token_type": "bearer", "role": "admin" }`
+- **Errors:** 401 (invalid credentials)
 
-### `POST /auth/refresh`
+### `POST /auth/refresh`  *(designed, not implemented)*
 - **Request:** `{ "refresh_token": "jwt" }`
 - **Response 200:** `{ "access_token": "jwt", "expires_in": 3600 }`
 - **Errors:** 401
