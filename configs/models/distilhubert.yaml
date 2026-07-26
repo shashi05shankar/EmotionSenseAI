@@ -1,0 +1,14 @@
+# Frozen Distil-HuBERT embeddings + SVM head. Needs the 'transformer' extra + GPU for
+# speed (run via notebooks/03_train_transformer_kaggle.ipynb). CPU-runnable but slow.
+family: distilhubert
+name: distilhubert-svm
+class_weight_balanced: true
+feature:
+  extractor: ssl
+  ssl_model: ntu-spml/distilhubert
+  sample_rate: 16000
+  max_duration_sec: 4.0
+  aggregate: mean_std
+hyperparams:
+  C: 10.0
+  kernel: rbf

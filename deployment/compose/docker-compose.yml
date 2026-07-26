@@ -1,0 +1,76 @@
+# Lean Core local stack (5 services): backend, frontend, postgres, minio, mlflow.
+# Prometheus/Grafana/Redis are Stretch (see docs/design/08-design-review.md).
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: ../..
+      dockerfile: deployment/docker/backend.Dockerfile
+    environment:
+      ESA_DB_URL: postgresql+psycopg2://esa:esa@postgres:5432/emotionsense
+      ESA_S3_ENDPOINT: http://minio:9000
+      ESA_MLFLOW_TRACKING_URI: http://mlflow:5000
+    volumes:
+      - ../../experiments:/app/experiments   # share the local registry for the demo
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - minio
+
+  frontend:
+    build:
+      context: ../..
+      dockerfile: deployment/docker/frontend.Dockerfile
+    environment:
+      ESA_API_BASE_URL: http://backend:8000/api/v1
+    volumes:
+      - ../../experiments:/app/experiments
+    ports:
+      - "8501:8501"
+    depends_on:
+      - backend
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: esa
+      POSTGRES_PASSWORD: esa
+      POSTGRES_DB: emotionsense
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - miniodata:/data
+
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.12.1
+    command: >
+      mlflow server --host 0.0.0.0 --port 5000
+      --backend-store-uri postgresql+psycopg2://esa:esa@postgres:5432/emotionsense
+      --default-artifact-root s3://emotionsense/mlflow
+    environment:
+      MLFLOW_S3_ENDPOINT_URL: http://minio:9000
+      AWS_ACCESS_KEY_ID: minioadmin
+      AWS_SECRET_ACCESS_KEY: minioadmin
+    ports:
+      - "5000:5000"
+    depends_on:
+      - postgres
+      - minio
+
+volumes:
+  pgdata:
+  miniodata:

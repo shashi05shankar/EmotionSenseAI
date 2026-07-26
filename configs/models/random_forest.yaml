@@ -1,0 +1,12 @@
+family: random_forest
+name: rf-mfcc
+class_weight_balanced: true
+feature:
+  extractor: mfcc
+  n_mfcc: 40
+  max_duration_sec: 3.0
+  aggregate: mean_std
+hyperparams:
+  n_estimators: 300
+  max_depth: null
+  n_jobs: -1

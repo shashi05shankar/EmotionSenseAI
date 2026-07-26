@@ -1,0 +1,10 @@
+family: logreg
+name: logreg-mfcc
+class_weight_balanced: true
+feature:
+  extractor: mfcc
+  n_mfcc: 40
+  max_duration_sec: 3.0
+  aggregate: mean_std
+hyperparams:
+  C: 1.0

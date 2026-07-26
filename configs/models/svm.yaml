@@ -1,0 +1,12 @@
+family: svm
+name: svm-mfcc
+class_weight_balanced: true
+feature:
+  extractor: mfcc
+  n_mfcc: 40
+  max_duration_sec: 3.0
+  aggregate: mean_std
+hyperparams:
+  C: 10.0
+  kernel: rbf
+  gamma: scale

@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install
+        run: |
+          sudo apt-get update && sudo apt-get install -y libsndfile1 ffmpeg
+          python -m pip install --upgrade pip
+          pip install -e ".[dev,backend]"
+      - name: Lint (ruff + black)
+        run: |
+          ruff check src tests
+          black --check src tests
+      - name: Type check (mypy)
+        run: mypy src || true   # non-blocking until strict-clean; tighten post-P11
+      - name: Unit + integration tests
+        run: pytest -m "unit or integration" --cov --cov-report=term-missing
+      - name: Smoke benchmark (synthetic, no downloads)
+        run: python scripts/run_benchmark.py --experiment configs/experiments/smoke_synthetic.yaml

@@ -1,0 +1,8 @@
+# Trivial baseline (R-ML1): contextualizes every other model's score.
+family: majority
+name: baseline-majority
+class_weight_balanced: false
+feature:
+  extractor: mfcc
+  max_duration_sec: 3.0
+hyperparams: {}

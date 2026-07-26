@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Env / secrets
+.env
+.secrets.baseline.local
+
+# Data & artifacts — NEVER commit corpora or model weights
+data/raw/
+data/normalized/
+data/features/
+data/manifests/*.jsonl
+experiments/artifacts/
+experiments/checkpoints/
+experiments/reports/
+mlruns/
+*.wav
+*.flac
+*.mp3
+*.ogg
+*.safetensors
+*.joblib
+*.pkl
+
+# but keep tiny test fixtures
+!tests/fixtures/**
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/

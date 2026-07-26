@@ -1,0 +1,16 @@
+name: tess
+display_name: TESS
+loader: tess
+language: en
+license: CC BY-NC 4.0
+source_url: https://tspace.library.utoronto.ca/handle/1807/24487
+root: data/raw/tess
+label_map:
+  neutral: neutral
+  happy: happy
+  sad: sad
+  angry: angry
+  fear: fear
+  disgust: disgust
+  ps: surprise
+notes: Only 2 speakers (both female) -> diversity/leakage caveat in model cards.

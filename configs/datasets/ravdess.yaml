@@ -1,0 +1,18 @@
+name: ravdess
+display_name: RAVDESS
+loader: ravdess
+language: en
+license: CC BY-NC-SA 4.0
+source_url: https://zenodo.org/record/1188976
+root: data/raw/ravdess
+# native -> canonical (null = drop). RAVDESS 'calm' is dropped (not in taxonomy).
+label_map:
+  neutral: neutral
+  calm: null
+  happy: happy
+  sad: sad
+  angry: angry
+  fearful: fear
+  disgust: disgust
+  surprised: surprise
+notes: Speech only (modality 03); song excluded. Only 2 statements -> lexical leakage caveat.

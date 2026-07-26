@@ -1,0 +1,12 @@
+name: smoke-synthetic
+description: Fast end-to-end smoke on synthetic audio (CI-friendly, no downloads).
+datasets:
+  - synthetic
+models:
+  - baseline_majority
+  - baseline_random
+  - logreg
+  - svm
+eval:
+  n_folds: 3
+  seed: 42

@@ -1,0 +1,17 @@
+name: synthetic
+display_name: Synthetic (fixture)
+loader: synthetic
+language: n/a
+license: n/a
+source_url: n/a
+root: data/raw/synthetic
+# Canonical labels only; generated on the fly. Execution fixture, not a real corpus.
+label_map:
+  angry: angry
+  disgust: disgust
+  fear: fear
+  happy: happy
+  neutral: neutral
+  sad: sad
+  surprise: surprise
+notes: Deterministic synthetic audio so the full pipeline runs without downloads/GPU.

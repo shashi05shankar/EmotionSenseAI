@@ -1,0 +1,9 @@
+# Stratified-random baseline (R-ML1): the chance floor.
+family: random
+name: baseline-random
+class_weight_balanced: false
+feature:
+  extractor: mfcc
+  max_duration_sec: 3.0
+hyperparams:
+  seed: 42

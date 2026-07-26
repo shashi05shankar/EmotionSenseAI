@@ -1,0 +1,16 @@
+name: crema_d
+display_name: CREMA-D
+loader: crema_d
+language: en
+license: Open Database License
+source_url: https://github.com/CheyneyComputerScience/CREMA-D
+root: data/raw/crema_d
+# 6-class corpus (no surprise/calm). 91 diverse speakers -> our cross-corpus test set.
+label_map:
+  NEU: neutral
+  HAP: happy
+  SAD: sad
+  ANG: angry
+  FEA: fear
+  DIS: disgust
+notes: Held out for cross-corpus generalization; NEVER used for in-corpus training.
