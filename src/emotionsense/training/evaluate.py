@@ -31,6 +31,7 @@ class Metrics:
     weighted_accuracy: float
     unweighted_accuracy: float  # headline
     macro_f1: float
+    weighted_f1: float  # support-weighted F1 (reflects class prevalence)
     per_class_f1: dict[str, float] = field(default_factory=dict)
     per_class_recall: dict[str, float] = field(default_factory=dict)
     confusion: list[list[int]] = field(default_factory=list)
@@ -42,6 +43,9 @@ def compute_metrics(y_true: list[str], y_pred: list[str], labels: list[str]) -> 
     acc = float(accuracy_score(y_true, y_pred))
     ua = float(balanced_accuracy_score(y_true, y_pred))  # mean per-class recall
     macro_f1 = float(f1_score(y_true, y_pred, labels=labels, average="macro", zero_division=0))
+    weighted_f1 = float(
+        f1_score(y_true, y_pred, labels=labels, average="weighted", zero_division=0)
+    )
     per_f1 = f1_score(y_true, y_pred, labels=labels, average=None, zero_division=0)
     per_rec = recall_score(y_true, y_pred, labels=labels, average=None, zero_division=0)
     cm = confusion_matrix(y_true, y_pred, labels=labels)
@@ -50,6 +54,7 @@ def compute_metrics(y_true: list[str], y_pred: list[str], labels: list[str]) -> 
         weighted_accuracy=acc,  # equal to plain accuracy for single-label; kept explicit
         unweighted_accuracy=ua,
         macro_f1=macro_f1,
+        weighted_f1=weighted_f1,
         per_class_f1={lab: float(v) for lab, v in zip(labels, per_f1, strict=True)},
         per_class_recall={lab: float(v) for lab, v in zip(labels, per_rec, strict=True)},
         confusion=cm.tolist(),
@@ -67,6 +72,8 @@ class AggregateMetrics:
     ua_std: float
     macro_f1_mean: float
     macro_f1_std: float
+    weighted_f1_mean: float
+    weighted_f1_std: float
     n_folds: int
     per_fold_ua: list[float] = field(default_factory=list)
 
@@ -76,6 +83,7 @@ def aggregate(fold_metrics: list[Metrics]) -> AggregateMetrics:
     acc = np.array([m.accuracy for m in fold_metrics])
     ua = np.array([m.unweighted_accuracy for m in fold_metrics])
     f1 = np.array([m.macro_f1 for m in fold_metrics])
+    wf1 = np.array([m.weighted_f1 for m in fold_metrics])
     return AggregateMetrics(
         accuracy_mean=float(acc.mean()),
         accuracy_std=float(acc.std()),
@@ -83,6 +91,8 @@ def aggregate(fold_metrics: list[Metrics]) -> AggregateMetrics:
         ua_std=float(ua.std()),
         macro_f1_mean=float(f1.mean()),
         macro_f1_std=float(f1.std()),
+        weighted_f1_mean=float(wf1.mean()),
+        weighted_f1_std=float(wf1.std()),
         n_folds=len(fold_metrics),
         per_fold_ua=ua.tolist(),
     )

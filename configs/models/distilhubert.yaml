@@ -1,6 +1,13 @@
-# Frozen Distil-HuBERT embeddings + SVM head. Needs the 'transformer' extra + GPU for
-# speed (run via notebooks/03_train_transformer_kaggle.ipynb). CPU-runnable but slow.
-family: distilhubert
+# Frozen Distil-HuBERT embeddings + SVM head (Transformer Phase 1).
+#
+# The CLASSIFIER is an SVM (`family: svm`) — trained ONLY on the embeddings, reusing the
+# exact classical SVM path so it is benchmarked under the identical protocol.
+# The TRANSFORMER is the frozen FEATURE EXTRACTOR (`feature.extractor: ssl`,
+# `ssl_model: ntu-spml/distilhubert`); it is never fine-tuned. Embeddings are cached by the
+# feature layer, so folds/runs reuse them instead of recomputing.
+#
+# Needs the 'transformer' extra; runs on Kaggle/Colab GPU (SSL extractor auto-selects CUDA).
+family: svm
 name: distilhubert-svm
 class_weight_balanced: true
 feature:

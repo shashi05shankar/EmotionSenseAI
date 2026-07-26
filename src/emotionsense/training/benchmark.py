@@ -11,6 +11,7 @@ is the thing that distinguishes this project from every repo in the landscape su
 
 from __future__ import annotations
 
+import time
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
@@ -42,6 +43,13 @@ class LeaderboardRow:
     macro_f1_mean: float
     n_folds: int
     per_class_f1: dict[str, float] = field(default_factory=dict)
+    # Extended metrics (Transformer Phase 1) — reported identically for every model.
+    weighted_f1_mean: float = 0.0
+    extract_time_s: float = 0.0  # mean per fold: audio -> features/embeddings (0 if cached)
+    train_time_s: float = 0.0  # mean per fold: classifier fit
+    infer_ms_per_sample: float = 0.0  # mean per fold: classifier predict, ms / test sample
+    confusion: list[list[int]] = field(default_factory=list)  # CV-aggregated over all folds
+    confusion_labels: list[str] = field(default_factory=list)
 
 
 def _predict_labels(model, x: np.ndarray) -> list[str]:
@@ -63,16 +71,31 @@ def run_cv(
     labels = labels or list(CANONICAL_LABELS)
     folds = make_speaker_independent_folds(pairs, n_folds=n_folds, seed=seed)
     fold_metrics: list[Metrics] = []
+    extract_times, train_times, infer_times = [], [], []
+    all_true: list[str] = []
+    all_pred: list[str] = []
     for fold in folds:
         assert_speaker_independent(fold)  # guardrail every fold
+        t0 = time.perf_counter()
         x_tr, y_tr = build_matrix(fold.train, model_cfg.feature, cache_dir)
         x_te, y_te = build_matrix(fold.test, model_cfg.feature, cache_dir)
+        extract_times.append(time.perf_counter() - t0)
+
         present = sorted(set(y_tr) | set(y_te))
         eval_labels = [c for c in labels if c in present]
         model = build_model(model_cfg)
+
+        t0 = time.perf_counter()
         model.fit(x_tr, y_tr)
+        train_times.append(time.perf_counter() - t0)
+
+        t0 = time.perf_counter()
         y_pred = _predict_labels(model, x_te)
+        infer_times.append((time.perf_counter() - t0) / max(1, len(y_te)) * 1000.0)
+
         fold_metrics.append(compute_metrics(y_te, y_pred, eval_labels))
+        all_true.extend(y_te)
+        all_pred.extend(y_pred)
 
     agg = aggregate(fold_metrics)
     # Average per-class F1 across folds (union of labels).
@@ -81,6 +104,11 @@ def run_cv(
         for lab, v in m.per_class_f1.items():
             per_class.setdefault(lab, []).append(v)
     per_class_mean = {k: float(np.mean(v)) for k, v in per_class.items()}
+
+    # CV-aggregated confusion matrix: folds partition the test sets, so concatenating all
+    # fold predictions yields one prediction per sample over the whole dataset.
+    cm_labels = [c for c in labels if c in set(all_true) | set(all_pred)]
+    overall = compute_metrics(all_true, all_pred, cm_labels)
 
     return LeaderboardRow(
         model=model_cfg.name,
@@ -93,6 +121,12 @@ def run_cv(
         macro_f1_mean=agg.macro_f1_mean,
         n_folds=agg.n_folds,
         per_class_f1=per_class_mean,
+        weighted_f1_mean=agg.weighted_f1_mean,
+        extract_time_s=float(np.mean(extract_times)),
+        train_time_s=float(np.mean(train_times)),
+        infer_ms_per_sample=float(np.mean(infer_times)),
+        confusion=overall.confusion,
+        confusion_labels=overall.labels,
     )
 
 
@@ -113,11 +147,20 @@ def run_cross_corpus(
     test_pairs = project_to_cross_corpus(test_pairs)
     labels = [c for c in CROSS_CORPUS_LABELS if c in {lab for _, lab in test_pairs}]
 
+    t0 = time.perf_counter()
     x_tr, y_tr = build_matrix(train_pairs, model_cfg.feature, cache_dir)
     x_te, y_te = build_matrix(test_pairs, model_cfg.feature, cache_dir)
+    extract_time = time.perf_counter() - t0
+
     model = build_model(model_cfg)
+    t0 = time.perf_counter()
     model.fit(x_tr, y_tr)
+    train_time = time.perf_counter() - t0
+
+    t0 = time.perf_counter()
     y_pred = _predict_labels(model, x_te)
+    infer_ms = (time.perf_counter() - t0) / max(1, len(y_te)) * 1000.0
+
     m = compute_metrics(y_te, y_pred, labels)
 
     return LeaderboardRow(
@@ -131,6 +174,12 @@ def run_cross_corpus(
         macro_f1_mean=m.macro_f1,
         n_folds=1,
         per_class_f1=m.per_class_f1,
+        weighted_f1_mean=m.weighted_f1,
+        extract_time_s=extract_time,
+        train_time_s=train_time,
+        infer_ms_per_sample=infer_ms,
+        confusion=m.confusion,
+        confusion_labels=m.labels,
     )
 
 

@@ -38,6 +38,22 @@ def test_run_cv_returns_valid_row(synthetic_pairs):
 
 
 @pytest.mark.integration
+def test_run_cv_reports_extended_metrics(synthetic_pairs):
+    row = run_cv(_cfg("logreg", "logreg"), synthetic_pairs, "synthetic", n_folds=3, seed=42)
+    # Transformer Phase 1 metrics, reported identically for every model.
+    assert 0.0 <= row.weighted_f1_mean <= 1.0
+    assert row.train_time_s >= 0.0
+    assert row.infer_ms_per_sample >= 0.0
+    assert row.extract_time_s >= 0.0
+    # CV-aggregated confusion matrix: square over the present labels.
+    assert row.confusion_labels
+    assert len(row.confusion) == len(row.confusion_labels)
+    assert all(len(r) == len(row.confusion_labels) for r in row.confusion)
+    # confusion counts sum to the number of test samples across all folds (== dataset size).
+    assert sum(sum(r) for r in row.confusion) == len(synthetic_pairs)
+
+
+@pytest.mark.integration
 def test_majority_baseline_is_near_chance(synthetic_pairs):
     row = run_cv(_cfg("majority", "majority"), synthetic_pairs, "synthetic", n_folds=3, seed=42)
     # 7 classes -> chance UA ~ 1/7. Baseline must not look competitive.
