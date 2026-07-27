@@ -1,0 +1,2 @@
+# Hugging Face Space runtime — installs the package straight from GitHub at the v1.0.0 tag.
+emotionsense[frontend] @ git+https://github.com/shashi05shankar/EmotionSenseAI.git@v1.0.0

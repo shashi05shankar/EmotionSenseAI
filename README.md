@@ -31,6 +31,40 @@ See the full design rationale in [`docs/design/`](docs/design/) and the pre-buil
 
 ---
 
+## Results (real corpora, speaker-independent)
+
+Validated on **RAVDESS** (1,440 clips) and **CREMA-D** (7,442 clips) on a Kaggle GPU.
+Full records: [`docs/results/`](docs/results/). Every number is **speaker-independent** and
+reported as mean ± std across 5 folds; baselines confirm the chance floor.
+
+**In-corpus — RAVDESS (7-class):**
+
+| Model | UA (headline) | Accuracy | macro-F1 |
+|-------|---------------|----------|----------|
+| **distilhubert-svm** (frozen Distil-HuBERT + SVM) | **0.689 ± 0.080** | 0.696 | 0.690 |
+| svm-mfcc | 0.42 | 0.44 | 0.42 |
+| baseline (chance = 1/7) | 0.143 | — | — |
+
+**In-corpus — CREMA-D (6-class, 91 speakers):** svm-mfcc **UA 0.476 ± 0.017** (chance 0.167).
+
+**Cross-corpus — train RAVDESS → test CREMA-D (6-class):**
+
+| Model | UA | macro-F1 |
+|-------|----|----------|
+| svm-mfcc | **0.258** | 0.233 |
+| distilhubert-svm | 0.212 | 0.120 |
+
+### The finding that matters
+
+Frozen Distil-HuBERT embeddings lift RAVDESS in-corpus UA from **0.42 → 0.69** (+26 pts) —
+but its **cross-corpus** UA *drops below* the humble MFCC baseline (0.21 vs 0.26). The
+higher-capacity representation captures more corpus-specific structure (mics, actors, the
+two fixed RAVDESS sentences), so it transfers *worse*. **A stronger in-corpus model can
+generalize worse across corpora — a robustness gap that single-corpus leaderboards hide.**
+This is exactly what the cross-corpus protocol is designed to surface.
+
+---
+
 ## Quickstart (zero downloads, no GPU)
 
 Everything runs on a **synthetic audio fixture** so you can exercise the entire pipeline —
@@ -87,13 +121,24 @@ python scripts/run_benchmark.py --experiment configs/experiments/baseline_suite.
 ```
 
 `baseline_suite.yaml` runs speaker-independent 5-fold CV on RAVDESS **plus a cross-corpus
-RAVDESS→CREMA-D generalization test**. Realistic speaker-independent targets: RAVDESS
-8-class ≥83%, cross-corpus expect a substantial drop (reported honestly, not hidden).
+RAVDESS→CREMA-D generalization test**. Measured results (above) — RAVDESS 7-class UA ≈0.69
+with Distil-HuBERT, ≈0.42 with MFCC; cross-corpus drops to ≈0.21–0.26 (reported honestly,
+not hidden).
 
 ### Transformer models (Distil-HuBERT) on free GPU
 
-Frozen SSL embeddings + a light head, or a Distil-HuBERT fine-tune, run on Colab/Kaggle —
-see [`notebooks/`](notebooks/). Install the extra locally with `pip install -e ".[transformer]"`.
+Frozen SSL embeddings + a light SVM head (never fine-tuned) run on Colab/Kaggle — see the
+ready-to-run [`notebooks/kaggle_emotionsense_validation.ipynb`](notebooks/kaggle_emotionsense_validation.ipynb).
+Install the extra locally with `pip install -e ".[transformer]"`.
+
+### Explain a prediction
+
+```bash
+python scripts/explain.py --audio path/to/clip.wav        # per-window emotion timeline
+```
+
+Splits the clip into windows, scores each independently, and shows *which parts of the audio
+drove which emotion* plus the aggregated prediction. See [Explainability](#explainability).
 
 ---
 
@@ -132,6 +177,44 @@ communicate only through the DB, object storage, and the registry. That's what m
 | `src/emotionsense/frontend` | Streamlit demo |
 | `configs/` | declarative YAML: datasets, features, models, experiments |
 | `docs/research`, `docs/design` | the full research + design + review trail |
+
+---
+
+## Explainability
+
+SER models are opaque and their confidences are **uncalibrated** — so instead of a single
+score, EmotionSense exposes *where in the clip* each emotion came from. The inference path
+already splits a clip into fixed windows and averages their probabilities; the explainability
+layer surfaces those **per-window predictions** as a timeline:
+
+```bash
+python scripts/explain.py --audio clip.wav
+```
+
+```
+Prediction: angry  (confidence 0.71)
+Clip 3.20s split into 2 window(s)
+
+  window |     span (s) |   emotion | conf
+----------------------------------------------
+       0 |  0.00-3.00   |     angry | 0.74
+       1 |  3.00-3.20   |       sad | 0.55
+```
+
+It reuses the *same* preprocessing + feature extractor as training (ADR-3), so explanations
+are consistent with predictions, and it prints an explicit "confidences are uncalibrated"
+caveat. The same view powers the live demo's timeline panel
+([`deployment/hf_space/app.py`](deployment/hf_space/app.py)).
+
+---
+
+## Deployment
+
+- **Live demo (Hugging Face Spaces):** self-contained Streamlit app in
+  [`deployment/hf_space/`](deployment/hf_space/) — no DB/GPU needed. See
+  [`docs/DEPLOY.md`](docs/DEPLOY.md).
+- **Full local stack:** `docker compose -f deployment/compose/docker-compose.yml up --build`
+  (backend + frontend + postgres + minio + mlflow).
 
 ---
 

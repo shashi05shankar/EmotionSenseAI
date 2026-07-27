@@ -10,3 +10,4 @@ hyperparams:
   C: 10.0
   kernel: rbf
   gamma: scale
+  random_state: 42   # pins SVC(probability=True) Platt calibration -> reproducible runs

@@ -19,3 +19,4 @@ feature:
 hyperparams:
   C: 10.0
   kernel: rbf
+  random_state: 42   # pins SVC(probability=True) Platt calibration -> reproducible runs
